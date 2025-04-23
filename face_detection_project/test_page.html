@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Face Detection Test Page</title>
+</head>
+<body>
+  <h2>Live Face Detection Test</h2>
+  <video id="webcam" autoplay playsinline width="320" height="240"></video>
+  <canvas id="snapshotCanvas" style="display:none;"></canvas>
+
+  <script>
+    const video = document.getElementById('webcam');
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then((stream) => {
+        video.srcObject = stream;
+      })
+      .catch((err) => {
+        console.error("Camera access denied:", err);
+      });
+
+    setInterval(() => {
+      const canvas = document.getElementById('snapshotCanvas');
+      const context = canvas.getContext('2d');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const imageData = canvas.toDataURL('image/jpeg');
+
+      fetch('http://localhost:5000/face-check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: imageData })
+      })
+      .then(response => response.json())
+      .then(data => {
+        console.log("Faces detected:", data.faces_detected);
+        if (data.faces_detected === 0) {
+          alert("No face detected! Please stay in front of the camera.");
+        }
+      });
+    }, 10000);
+  </script>
+</body>
+</html>
